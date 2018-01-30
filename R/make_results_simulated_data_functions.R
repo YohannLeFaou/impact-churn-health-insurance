@@ -288,34 +288,10 @@ make_result_simulated_data = function(v_n_simul,
 
                      res = foreach(k=1:n_repet,
                                    .combine = rbind,
-                                   .packages = c("survival",
-                                                 #"randomForestSRC",
+                                   .packages = c("sword",
                                                  "copula"
-                                                 #"mgcv",
-                                                 #"rpart"
-                                                 #"VineCopula"
-                                                 #"dplyr",
-                                                 #"caret"
                                    ),
                                    .export= c(
-                                     # functions of the package
-
-                                     "rsf_reg",
-                                     "cox_reg",
-                                     "sw_reg",
-                                     "make_res_weighted_regression",
-                                     "rpartRF",
-                                     "predict_nodes",
-                                     "predict_rpartRF",
-                                     "NormalizedGini",
-                                     "SumModelGini",
-                                     "eval_aggregated_criteria",
-                                     "eval_weighted_criteria",
-                                     "eval_model",
-                                     "make_weights_from_surv_curves",
-                                     "make_KM_weights",
-                                     "make_weights",
-
                                      # function for simulated data
 
                                      "calc_R2_weibull",
@@ -631,9 +607,6 @@ make_result_simulated_data = function(v_n_simul,
                    }
             )
     )
-  # tab_results$R2 = round(tab_results$R2, 5)
-  # tab_results$Kendall = round(tab_results$Kendall, 5)
-  # tab_results$Gini = round(tab_results$Gini, 5)
   return(tab_results)
 }
 
@@ -704,7 +677,7 @@ RF_classic = function(y_no_cens_var,
       colnames(mat_w_test) = types_w_ev
     }
     for (j in 1:length(types_w_ev)){
-      mat_w_train[,j] = make_weights(data = data[data$is_train == 1, ],
+      mat_w_train[,j] = sword:::make_weights(data = data[data$is_train == 1, ],
                                      y_name = "y_prime",
                                      delta_name = "delta_prime",
                                      y_name2 = y_var,
@@ -714,7 +687,7 @@ RF_classic = function(y_no_cens_var,
                                      x_vars = x_vars,
                                      cens_mod_obj = FALSE)$weights
       if (!is.null(test)){
-        mat_w_test[,j] = make_weights(data = data[data$is_train == 0, ],
+        mat_w_test[,j] = sword:::make_weights(data = data[data$is_train == 0, ],
                                       y_name = "y_prime",
                                       delta_name = "delta_prime",
                                       y_name2 = y_var,
@@ -784,7 +757,7 @@ RF_classic = function(y_no_cens_var,
                                                                      train[,x_vars])$predicted
 
   # Performances on train test
-  perf_train = eval_model(predictions = overfitted_predictions_RF_classic,
+  perf_train = sword:::eval_model(predictions = overfitted_predictions_RF_classic,
                           data = train,
                           phi_name = "phi",
                           y_name = "y_prime",
@@ -802,7 +775,7 @@ RF_classic = function(y_no_cens_var,
                                                                  test[,x_vars])$predicted
 
     # Performances on test set
-    perf_test = eval_model(predictions = test_predictions_RF_classic,
+    perf_test = sword:::eval_model(predictions = test_predictions_RF_classic,
                            data = test,
                            phi_name = "phi",
                            y_name = "y_prime",
@@ -835,5 +808,5 @@ RF_classic = function(y_no_cens_var,
     result$mat_w_test = mat_w_test
   }
   return(result)
-  }
+}
 

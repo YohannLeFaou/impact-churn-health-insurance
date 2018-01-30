@@ -2,19 +2,11 @@
 
 setwd("~/Google Drive/GitHub/resultats_sword")
 
-packages <- c(#"ggplot2",
-  #"survival",
-  #"randomForestSRC",
-  #"mgcv",
-  #"ranger",
+packages <- c(
+  "sword",
   "doParallel",
   "copula",
-  #"VineCopula",
-  #"MASS",
-  #"corpcor",
   "dplyr"
-  #"caret",
-  #"Matrix"
 )
 
 has <- packages %in% rownames(installed.packages())
@@ -30,8 +22,7 @@ print.myDF <- function(x, abbr = TRUE, minlength = 10, ...) {
   print.data.frame(x, ...)
 }
 
-#source("R/make_results_simulated_data_functions.R")
-
+source("R/make_results_simulated_data_functions.R")
 
 
 # ------------------------------------------------------------------------
