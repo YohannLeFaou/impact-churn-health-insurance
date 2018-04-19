@@ -1,12 +1,16 @@
-R/switch.R
-R/make_results_simulated_data5.R
-R/make_results_simulated_data_functions5.R
-R/analysis_results_simulated_data5.R
-output_2017-10-24_new
-images_2017-10-24_new
+test_simulated_data/R/switch.R
+test_simulated_data/R/make_results_simulated_data5.R
+test_simulated_data/R/make_results_simulated_data_functions5.R
+test_simulated_data/R/analysis_results_simulated_data5.R
+test_simulated_data/output_2017-10-24_new
+test_simulated_data/images_2017-10-24_new
 *.swp
-output_2017-10-24/output_consola.txt
-R/info
+test_simulated_data/output_2017-10-24/output_consola.txt
+test_simulated_data/R/info
 to_do_list
+R
+rogue
+test_real_data
+présentations
 
 
