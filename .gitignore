@@ -1,5 +1,5 @@
 test_simulated_data/R/switch.R
-test_simulated_data/R/make_results_simulated_data5.R
+/test_simulated_data/R/make_results_simulated_data5.R
 test_simulated_data/R/make_results_simulated_data_functions5.R
 test_simulated_data/R/analysis_results_simulated_data5.R
 test_simulated_data/output_2017-10-24_new
@@ -8,9 +8,10 @@ test_simulated_data/images_2017-10-24_new
 test_simulated_data/output_2017-10-24/output_consola.txt
 test_simulated_data/R/info
 to_do_list
-R
+/test_simlulated_data/R/info
 rogue
 test_real_data
 présentations
+R
 
 
