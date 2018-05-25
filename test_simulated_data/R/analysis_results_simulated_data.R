@@ -2,17 +2,13 @@
 library(ggplot2)
 library(reshape2)
 library(xtable)
+library(dplyr)
 
-setwd("~/Google Drive/GitHub/resultats_sword")
+setwd("~/Google Drive/GitHub/impact-churn-health-insurance/test_simulated_data/")
 
-print.myDF <- function(x, abbr = TRUE, minlength = 10, ...) {
-  if (abbr) {
-    names(x) <- abbreviate(names(x), minlength = minlength)
-  }
-  print.data.frame(x, ...)
-}
-
-
+# ----------------------------------------------------------------
+#                   Functions
+# ----------------------------------------------------------------
 
 make_plot_results_simul = function(data_results, maxdepth, max_w_mod, plot_title = "", criteria, data_ranks = NULL){
 
@@ -187,7 +183,7 @@ make_correlation_simul = function(data_results, minleaf, maxdepth, max_w_mod){
                                                                     FUN = function(y){
                                                                       cor(x = d2[,grep(pattern = paste0(x,y,"_"), x = colnames(d2))], method = "spearman")[,1]
                                                                     }))
-                                       colnames(mcor) = gsub(pattern = paste0(x,y,"_"), replacement = "", x = colnames(mcor))
+                                       colnames(mcor) = sapply(X = colnames(mcor), FUN = function(s){substr(x = s, nchar(x)+3, nchar(s))})
                                        return(mcor)
                                      }))
 
@@ -319,10 +315,8 @@ multiplot(plot1$plot + ylab("mse") + theme(legend.position = "None"),
 
 
 # -------------------------------------------------
-#             Correlation
+#             Correlations
 # -------------------------------------------------
-
-# we should select some lines in order to compute correlations
 
 
 res_simul_weibull_log_1000 = read.csv("output_2017-10-24/res_simul_weibull_log_1000.csv")

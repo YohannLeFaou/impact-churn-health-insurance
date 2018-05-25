@@ -1,9 +1,9 @@
 
 
-setwd("~/Google Drive/GitHub/resultats_sword")
+setwd("~/Google Drive/GitHub/impact-churn-health-insurance/test_simulated_data/")
 
 packages <- c(
-  "sword",
+  "sword", # the methods of the article are implemented in the package sword
   "doParallel",
   "copula",
   "dplyr"
@@ -15,21 +15,14 @@ for(package in packages){ library(package, character.only = TRUE)}
 
 options(max.print = 10000)
 
-print.myDF <- function(x, abbr = TRUE, minlength = 10, ...) {
-  if (abbr) {
-    names(x) <- abbreviate(names(x), minlength = minlength)
-  }
-  print.data.frame(x, ...)
-}
 
+# functions for the data simulation and comparison of the different algorithms
 source("R/make_results_simulated_data_functions.R")
 
 
 # ------------------------------------------------------------------------
 #               Avec fonction log(x+1)
 # ------------------------------------------------------------------------
-
-#setwd("~/Google Drive/GitHub/resultats_sword/")
 
 #######  cas weibull
 t1 = Sys.time()
@@ -97,9 +90,6 @@ res_simul_weibull_log_summary = res_simul_weibull_log %>%
             mean_R2_20 = round(mean(criteria_group.R2_20),5), sd_R2_20 = round(sd(criteria_group.R2_20),5),
             mean_Kendall_20 = round(mean(criteria_group.Kendall_20),5), sd_Kendall_20 = round(sd(criteria_group.Kendall_20),5))
 
-# print.myDF(res_simul_weibull_log_summary[,c("prop_censored", "target_R2_C", "censoring_threshold", "type_pred", "algo",
-#                                             "type_w", "minleaf", "max_w_mod", "mean_R2", "mean_Kendall")])
-
 
 write.csv(x = res_simul_weibull_log_summary,
           file = "output_2017-10-24/res_simul_weibull_log_1000_summary.csv",
@@ -157,7 +147,6 @@ write.csv(res_simul_mix_dep_log,
           file = "output_2017-10-24/res_simul_mix_dep_log_1000.csv",
           row.names = F)
 
-#res_simul_mix_dep_log = read.csv(file = "output_2017-09-05/res_simul_mix_dep_log_1000.csv")
 
 res_simul_mix_dep_log_summary = res_simul_mix_dep_log %>%
   group_by(n_simul, n_vars, prop_censored, target_R2_C, censoring_threshold, mixture_T, mixture_T_type, mixture_T_n_groups,
@@ -175,17 +164,10 @@ res_simul_mix_dep_log_summary = res_simul_mix_dep_log %>%
             mean_R2_20 = round(mean(criteria_group.R2_20),5), sd_R2_20 = round(sd(criteria_group.R2_20),5),
             mean_Kendall_20 = round(mean(criteria_group.Kendall_20),5), sd_Kendall_20 = round(sd(criteria_group.Kendall_20),5))
 
-# print.myDF(res_simul_mix_dep_log_summary[,c("prop_censored", "target_R2_C", "censoring_threshold", "type_pred", "algo", "type_w",
-#                                             "minleaf", "max_w_mod", "mean_R2", "mean_Kendall")])
 
 write.csv(x = res_simul_mix_dep_log_summary,
           file = "output_2017-10-24/res_simul_mix_dep_log_1000_summary.csv",
           row.names = F)
-
-
-# print.myDF(res_simul_mix_dep_log_summary[c(5,13,21,35,83,92,99,113,122,130,138,152),
-#                                      c("prop_censored", "target_R2_C", "censoring_threshold","algo", "type_w", "minleaf", "max_w_mod",
-#                                        "mean_R2", "mean_Kendall", "mean_KM_R2", "mean_Cox_R2", "mean_RSF_R2")])
 
 
 ####### cas mixture independant
@@ -252,12 +234,6 @@ res_simul_mix_indep_log_summary = res_simul_mix_indep_log %>%
             mean_R2_20 = round(mean(criteria_group.R2_20),5), sd_R2_20 = round(sd(criteria_group.R2_20),5),
             mean_Kendall_20 = round(mean(criteria_group.Kendall_20),5), sd_Kendall_20 = round(sd(criteria_group.Kendall_20),5) )
 
-# print.myDF(res_simul_mix_indep_log_summary[,c("prop_censored", "target_R2_C", "censoring_threshold","algo", "type_w", "minleaf", "max_w_mod", "mean_R2", "mean_Kendall")])
-#
-# print.myDF(res_simul_mix_indep_log_summary[c(2,7,15,23,29,31,33,36,39,80,87,95,103,107,109,111,115,117,119,124,134,140,146,148,150,154,156),
-#                                    c("prop_censored", "target_R2_C", "censoring_threshold","algo", "type_w", "minleaf", "max_w_mod",
-#                                          "mean_R2", "mean_Kendall", "mean_KM_R2", "mean_Cox_R2", "mean_RSF_R2")])
-
 
 write.csv(res_simul_mix_indep_log,
           file = "output_2017-10-24/res_simul_mix_indep_log_1000.csv",
@@ -322,8 +298,6 @@ write.csv(res_simul_weibull_identite,
           file = "output_2017-10-24/res_simul_weibull_identite_1000.csv",
           row.names = F)
 
-#res_simul_weibull_identite = read.csv(file = "output_2017-09-05/res_simul_weibull_identite_1000.csv")
-
 
 res_simul_weibull_identite_summary = res_simul_weibull_identite %>%
   group_by(n_simul, n_vars, prop_censored, target_R2_C, censoring_threshold, mixture_T, mixture_T_type, mixture_T_n_groups,
@@ -340,9 +314,6 @@ res_simul_weibull_identite_summary = res_simul_weibull_identite %>%
             mean_RSF_mse = round(mean(criteria_weighted.RSF_mse),5), sd_RSF_mse = round(sd(criteria_weighted.RSF_mse),5),
             mean_R2_20 = round(mean(criteria_group.R2_20),5), sd_R2_20 = round(sd(criteria_group.R2_20),5),
             mean_Kendall_20 = round(mean(criteria_group.Kendall_20),5), sd_Kendall_20 = round(sd(criteria_group.Kendall_20),5))
-
-# print.myDF(res_simul_weibull_identite_summary[,c("prop_censored", "target_R2_C", "censoring_threshold", "type_pred", "algo",
-#                                                  "type_w", "minleaf", "max_w_mod", "mean_R2", "mean_Kendall")])
 
 write.csv(res_simul_weibull_identite_summary,
           file = "output_2017-10-24/res_simul_weibull_identite_1000_summary.csv",
@@ -401,8 +372,6 @@ write.csv(res_simul_mix_dep_identite,
           file = "output_2017-10-24/res_simul_mix_dep_identite_1000.csv",
           row.names = F)
 
-#res_simul_mix_dep_identite = read.csv(file = "output_2017-09-05/res_simul_mix_dep_identite_1000.csv")
-
 
 res_simul_mix_dep_identite_summary = res_simul_mix_dep_identite %>%
   group_by(n_simul, n_vars, prop_censored, target_R2_C, censoring_threshold, mixture_T, mixture_T_type, mixture_T_n_groups,
@@ -420,19 +389,10 @@ res_simul_mix_dep_identite_summary = res_simul_mix_dep_identite %>%
             mean_R2_20 = round(mean(criteria_group.R2_20),5), sd_R2_20 = round(sd(criteria_group.R2_20),5),
             mean_Kendall_20 = round(mean(criteria_group.Kendall_20),5), sd_Kendall_20 = round(sd(criteria_group.Kendall_20),5))
 
-# print.myDF(res_simul_mix_dep_identite_summary[,c("prop_censored", "target_R2_C", "censoring_threshold",
-#                                                  "type_pred", "algo", "type_w",
-#                                                  "minleaf", "max_w_mod",
-#                                                  "mean_R2", "mean_Kendall")])
 
 write.csv(x = res_simul_mix_dep_identite_summary,
           file = "output_2017-10-24/res_simul_mix_dep_identite_1000_summary.csv",
           row.names = F)
-
-#
-# print.myDF(res_simul_mix_dep_log_summary[c(5,13,21,35,83,92,99,113,122,130,138,152),
-#                                      c("prop_censored", "target_R2_C", "censoring_threshold","algo", "type_w", "minleaf", "max_w_mod",
-#                                        "mean_R2", "mean_Kendall", "mean_KM_R2", "mean_Cox_R2", "mean_RSF_R2")])
 
 
 ####### cas mixture independant
@@ -499,11 +459,6 @@ res_simul_mix_indep_identite_summary = res_simul_mix_indep_identite %>%
             mean_R2_20 = round(mean(criteria_group.R2_20),5), sd_R2_20 = round(sd(criteria_group.R2_20),5),
             mean_Kendall_20 = round(mean(criteria_group.Kendall_20),5), sd_Kendall_20 = round(sd(criteria_group.Kendall_20),5) )
 
-# print.myDF(res_simul_mix_indep_identite_summary[,c("prop_censored", "target_R2_C", "censoring_threshold","algo", "type_w", "minleaf", "max_w_mod", "mean_R2", "mean_Kendall")])
-#
-# print.myDF(res_simul_mix_indep_log_summary[c(2,7,15,23,29,31,33,36,39,80,87,95,103,107,109,111,115,117,119,124,134,140,146,148,150,154,156),
-#                                    c("prop_censored", "target_R2_C", "censoring_threshold","algo", "type_w", "minleaf", "max_w_mod",
-#                                          "mean_R2", "mean_Kendall", "mean_KM_R2", "mean_Cox_R2", "mean_RSF_R2")])
 
 write.csv(res_simul_mix_indep_identite,
           file = "output_2017-10-24/res_simul_mix_indep_identite_1000.csv",

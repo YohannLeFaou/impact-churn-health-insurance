@@ -63,19 +63,15 @@ generate_censored_data = function(n_simul,
   ## shapeT : shape parameter of the weibull T distribution
   ## shapeC : shape parameter of the weibull C distribution
   ## n_vars : number of covariates
-  ## target_R2_T : percentage of explained variance in the model for T given X
   ## target_R2_C : percentage of explained variance in the model for C given X
   ## prop_censored : proportion of non censored observations in the simulated data
-  ## with_jump (bool) : is the data generated with a jump at lambdaT/2 or not ?
-  ## jump_importance : relative importance of the jump part in the influence of X
 
   # Note : data is generated so that it fits to some target objectives :
-  ## - target_R2_T
   ## - target_R2_C
   ## - prop_censored
-  # For these to holds, each target matches an optimised parameter. Also we use while loops to
+  # For these to hold, each target matches an optimised parameter. Also we use while loops to
   ## verifie that our data fits the requirements after the optimisation, since we observes
-  ## sometimes the optimisation not giving a good value for the parameter
+  ## sometimes the optimisation does not give a good value for the parameter
 
   # Remark : if mixture_T_type = "dependant", n_vars
   if (!mixture_T & !is.null(mixture_T_type)){stop("If mixture_T = FALSE, mixture_T_type has to be set to NULL")}
@@ -97,7 +93,6 @@ generate_censored_data = function(n_simul,
 
   # generate T
   if (!mixture_T){
-    # case 1: no jump in the T distribution
     betaT = rnorm(n_vars, mean = 0, sd = 0.2)
     coefT = as.matrix(X) %*% betaT
     Te = exp(-coefT) * rweibull(n = n_simul, scale = lambdaT, shape = shapeT)
@@ -633,6 +628,9 @@ RF_classic = function(y_no_cens_var,
                       minleaf,
                       ...){
 
+  # fonction only used in the simulated data case, to benchmark our method with the "classical"
+  ## random forest algo used as if there was no censoring
+  
   # column names of mat_w should be explicit
   if(!is.null(mat_w) & is.null(colnames(mat_w))) colnames(mat_w) = paste0("w",1:ncol(mat_w))
 
