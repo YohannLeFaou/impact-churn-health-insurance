@@ -1,0 +1,10 @@
+"model","mean_rank"
+"wRF1_KM",7.25
+"wRF1_Cox",7.62
+"wRF1_RSF",3.99
+"wRF2_KM",4.54
+"wRF2_Cox",3.96
+"wRF3_KM",5.94
+"wRF3_Cox",3.36
+"RSF_regression",4.03
+"Cox_regression",4.31

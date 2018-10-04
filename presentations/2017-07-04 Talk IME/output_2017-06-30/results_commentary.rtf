@@ -1,0 +1,173 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf830
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww14100\viewh12620\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \
+### GBSG2 (correspond au dataset breast de l\'92article Random Survival Forest)\
+\
+Nb de lignes (sans valeur manquante) : 686\
+Taux de censure : 46,8%\
+max_GBSG2 = 2000\
+\
+res_GBSG2_identite = make_result_real_data(y_var = "time", \
+                                          delta_var = "cens",\
+                                          x_vars = setdiff(colnames(GBSG2),c("time","cens")),\
+                                          data = GBSG2,\
+                                          n_train = floor(nrow(GBSG2)/2 + 0.5),\
+                                          n_test = nrow(GBSG2) - floor(nrow(GBSG2)/2 + 0.5),\
+                                          max_value = max_GBSG2,\
+                                          phi = function(x)\{x\},\
+                                          methods = c("concordance","weighted"),\
+                                          types_weights_eval = c("KM","Cox","RSF"),\
+                                          max_ratio_weights_eval = 1000,\
+                                          v_w_RF_type_weights = c("KM","Cox","RSF"),\
+                                          v_w_RF_nodesize = c(3, 5, 10, 20, 50),\
+                                          v_w_RF_max_ratio_weights_model = c(1000),\
+                                          v_w_gam_type_weights = c("KM","Cox","RSF"),\
+                                          v_w_gam_max_ratio_weights_model = c(1000),\
+                                          v_RSF_reg_nodesize = c(3, 5, 10, 20, 50),\
+                                          ntree = 100,\
+                                          n_repet = 30)\
+\
+Commentaire des r\'e9sultats :\
+- je retrouve les r\'e9sultats de concordance qui figurent dans l\'92article (pour Cox et RSF : ok !)\
+- ce dataset est favorable au m\'e9thode alternatives (tous les crit\'e8res sont major\'e9s par RSF m\'eame si y\'92a pas un \'e9norme \'e9cart avec certaine config de weighted RF)\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 \
+### transplant (appara\'eet dans l\'92article Random Survival Forest)\
+\
+Nb de lignes (sans valeur manquante) : 797 (815 lignes en tout)\
+Taux de censure : 20,3%\
+max_transplant = 1000\
+\
+res_transplant_identite = make_result_real_data(y_var = "futime", \
+                                             delta_var = "delta",\
+                                             x_vars = setdiff(colnames(transplant_bis),c("futime","delta","event")),\
+                                             data = transplant_bis,\
+                                             n_train = floor(nrow(transplant_bis)/2 + 0.5),\
+                                             n_test = nrow(transplant_bis) - floor(nrow(transplant_bis)/2 + 0.5),\
+                                             max_value = max_transplant,\
+                                             phi = function(x)\{x\},\
+                                             methods = c("concordance","weighted"),\
+                                             types_weights_eval = c("KM","Cox","RSF"),\
+                                             max_ratio_weights_eval = 1000,\
+                                             v_w_RF_type_weights = c("KM","Cox","RSF"),\
+                                             v_w_RF_nodesize = c(5, 10, 20, 50, 100),\
+                                             v_w_RF_max_ratio_weights_model = c(1000),\
+                                             v_w_gam_type_weights = c("KM","Cox","RSF"),\
+                                             v_w_gam_max_ratio_weights_model = c(1000),\
+                                             v_RSF_reg_nodesize = c(5, 10, 20, 50, 100),\
+                                             ntree = 100,\
+                                             n_repet = 30)\
+\
+Commentaire des r\'e9sultats :\
+- je ne retrouve pas du tout les r\'e9sultats de concordance qui figurent dans l\'92article de RSF !\
+- Concordance : RSF et Cox sont meilleurs que w_RF, par contre w_GLM marche aussi bien que RSF et Cox. Prendre le log resserre l\'92\'e9cart entre w_RF et Cox-RSF\
+- R2 : w_RF et devant dans ttes les configurations (mais c\'92est serr\'e9) (les \'e9carts sont plus important avec l\'92identit\'e9 qu\'92avec log!)\
+\
+\
+\
+### veteran (appara\'eet dans l\'92article Random Survival Forest)\
+\
+Nb de lignes (sans valeur manquante) : 137\
+Taux de censure : 6,6%\
+max_transplant = 300\
+\
+res_veteran_identite = make_result_real_data(y_var = "time", \
+                                     delta_var = "status",\
+                                     x_vars = setdiff(colnames(veteran),c("time","status")),\
+                                     data = veteran,\
+                                     n_train = floor(nrow(veteran)/2 + 0.5),\
+                                     n_test = nrow(veteran) - floor(nrow(veteran)/2 + 0.5),\
+                                     max_value = max_veteran,\
+                                     phi = function(x)\{x\},\
+                                     methods = c("concordance","weighted"),\
+                                     types_weights_eval = c("KM","Cox","RSF"),\
+                                     max_ratio_weights_eval = 1000,\
+                                     v_w_RF_type_weights = c("KM","Cox","RSF"),\
+                                     v_w_RF_nodesize = c(3,5,7,10,20),\
+                                     v_w_RF_max_ratio_weights_model = c(1000),\
+                                     v_w_gam_type_weights = c("KM","Cox","RSF"),\
+                                     v_w_gam_max_ratio_weights_model = c(1000),\
+                                     v_RSF_reg_nodesize = c(3,5,7,10,20),\
+                                     ntree = 100,\
+                                     n_repet = 30)\
+\
+Commentaire des r\'e9sultats :\
+- je retrouve les r\'e9sultats de concordance qui figurent dans l\'92article de RSF !\
+- Concordance : RSF et Cox sont meilleurs que w_RF, par contre w_GLM marche aussi bien que RSF et Cox. Prendre le log resserre l\'92\'e9cart entre w_RF et Cox-RSF (pareil que transplant)\
+- R2 : avec identit\'e9 RSF est devant (Cox puis w_RF, puis Cox), avec log \'e7a se resserr\'e9 bcp mais RSF reste devant.\
+\
+\
+### pbc (appara\'eet dans l\'92article Random Survival Forest)\
+\
+Nb de lignes (sans valeur manquante) : 276 (418 en tout)\
+Taux de censure : 50,7%\
+max_pbc= 3500\
+\
+res_pbc_identite = make_result_real_data(y_var = "time", \
+                                     delta_var = "status",\
+                                     x_vars = setdiff(colnames(veteran),c("time","status")),\
+                                     data = veteran,\
+                                     n_train = floor(nrow(veteran)/2 + 0.5),\
+                                     n_test = nrow(veteran) - floor(nrow(veteran)/2 + 0.5),\
+                                     max_value = max_veteran,\
+                                     phi = function(x)\{x\},\
+                                     methods = c("concordance","weighted"),\
+                                     types_weights_eval = c("KM","Cox","RSF"),\
+                                     max_ratio_weights_eval = 1000,\
+                                     v_w_RF_type_weights = c("KM","Cox","RSF"),\
+                                     v_w_RF_nodesize = c(3,5,7,10,20),\
+                                     v_w_RF_max_ratio_weights_model = c(1000),\
+                                     v_w_gam_type_weights = c("KM","Cox","RSF"),\
+                                     v_w_gam_max_ratio_weights_model = c(1000),\
+                                     v_RSF_reg_nodesize = c(3,5,7,10,20),\
+                                     ntree = 100,\
+                                     n_repet = 30)\
+\
+Commentaire des r\'e9sultats :\
+- je retrouve les r\'e9sultats de concordance qui figurent dans l\'92article de RSF (\'e0 peu pr\'e8s) !\
+- Concordance : RSF meilleur que w_RF, puis Cox, puis w_gam. Prendre le log resserre l\'92\'e9cart entre w_RF et RSF (on passe m\'eame juste devant)\
+- R2 : les R2 avec ou sans log restent favorables \'e0 RSF (cox est pas mal aussi), puis w_RF\
+\
+\
+### burn (appara\'eet dans l\'92article Random Survival Forest)\
+# rmq : j\'92ai consid\'e9r\'e9 dans les variables explicatives les temps T1, D1, T2, D2 : je ne sais pas si c\'92est justifi\'e9 pour l\'92application\
+Nb de lignes (sans valeur manquante) : 154\
+Taux de censure : 57,1%\
+max_burn = 40\
+\
+res_burn_identite = make_result_real_data(y_var = "T3", \
+                                                delta_var = "D3",\
+                                                x_vars = setdiff(colnames(burn),c("T3","D3")), #paste0("Z",1:11)\
+                                                data = burn,\
+                                                n_train = floor(nrow(burn)/2 + 0.5),\
+                                                n_test = nrow(burn) - floor(nrow(burn)/2 + 0.5),\
+                                                max_value = max_burn,\
+                                                phi = function(x)\{x\},\
+                                                methods = c("concordance","weighted"),\
+                                                types_weights_eval = c("KM","Cox","RSF"),\
+                                                max_ratio_weights_eval = 1000,\
+                                                v_w_RF_type_weights = c("KM","Cox","RSF"),\
+                                                v_w_RF_nodesize = c(3, 5, 10, 20),\
+                                                v_w_RF_max_ratio_weights_model = c(1000),\
+                                                v_w_gam_type_weights = c("KM","Cox","RSF"),\
+                                                v_w_gam_max_ratio_weights_model = c(1000),\
+                                                v_RSF_reg_nodesize = c(3, 5, 10, 20),\
+                                                ntree = 100,\
+                                                n_repet = 30)\
+\
+Commentaire des r\'e9sultats :\
+- je retrouve les r\'e9sultats de concordance qui figurent dans l\'92article de RSF (\'e0 peu pr\'e8s) !\
+- Concordance : w_RF meilleur, puis Cox, puis RSF. Prendre le log resserre l\'92\'e9cart entre w_RF et RSF (on passe m\'eame juste devant)\
+- R2 : w_RF meilleur, mais attention parce que de gros \'e9cart types\
+\
+\
+\
+\
+\
+}
