@@ -79,7 +79,7 @@ generate_censored_data = function(n_simul,
 
   if (!is.null(mixture_T_type)){
     mixture_T_type = match.arg(as.character(mixture_T_type), c("dependant", "independant"))
-    if (n_vars < 2){stop("If mixture_T_type = dependant, n_vars has to be >= 2")}
+    if (n_vars < 2){stop("If mixture_T_type != NULL, n_vars has to be >= 2")}
   }
 
   # generate X
@@ -243,6 +243,10 @@ make_result_simulated_data = function(v_n_simul,
                                       v_sw_RF_mode1_minleaf,
                                       v_sw_RF_mode2_minleaf,
                                       v_rsf_reg_minleaf,
+                                      v_rrt_reg_minleaf,
+                                      v_rlt_reg_minleaf,
+                                      v_rlt_reg_no_RL_minleaf,
+
 
                                       v_sw_RF_mode1_max_w_mod,
                                       v_sw_RF_mode2_max_w_mod,
@@ -252,6 +256,10 @@ make_result_simulated_data = function(v_n_simul,
                                       v_sw_RF_mode1_maxdepth,
                                       v_sw_RF_mode2_maxdepth,
                                       v_rsf_reg_maxdepth,
+                                      v_rrt_reg_maxdepth,
+                                      v_rlt_reg_maxdepth,
+                                      v_rlt_reg_no_RL_maxdepth,
+
 
                                       types_w_ev,
                                       max_w_ev,
@@ -329,16 +337,23 @@ make_result_simulated_data = function(v_n_simul,
                                      "v_sw_gam_max_w_mod",
                                      "v_rsf_reg_minleaf",
                                      "v_RF_minleaf",
+                                     "v_rlt_reg_minleaf",
+                                     "v_rlt_reg_no_RL_minleaf",
+                                     "v_rrt_reg_minleaf",
+
 
                                      "v_RF_maxdepth",
                                      "v_sw_RF_mode1_maxdepth",
                                      "v_sw_RF_mode2_maxdepth",
-                                     "v_rsf_reg_maxdepth"
+                                     "v_rsf_reg_maxdepth",
+                                     "v_rlt_reg_maxdepth",
+                                     "v_rlt_reg_no_RL_maxdepth",
+                                     "v_rrt_reg_maxdepth"
                                    ),
                                    .verbose = F) %dopar% {
 
                                      # load sword development version when developing
-                                     devtools::load_all()
+                                     devtools::load_all("~/Google Drive/GitHub/sword")
 
                                      set.seed(seed + k)
 
@@ -395,7 +410,6 @@ make_result_simulated_data = function(v_n_simul,
 
                                      ########### results of the models
 
-
                                      param_RF_classic = expand.grid(type_pred = NA,
                                                                     algo = "RF_bench",
                                                                     type_w = NA,
@@ -403,7 +417,7 @@ make_result_simulated_data = function(v_n_simul,
                                                                     maxdepth = v_RF_maxdepth,
                                                                     max_w_mod = NA)
 
-                                     res_RF_classic = do.call(rbind, lapply(X = 1:nrow(param_RF_classic),
+                                     list_res_RF_classic = lapply(X = 1:nrow(param_RF_classic),
                                                                             FUN = function(j){
                                                                               unlist(RF_classic(
                                                                                 y_no_cens_var = "Te",
@@ -424,9 +438,10 @@ make_result_simulated_data = function(v_n_simul,
                                                                                 maxdepth = param_RF_classic$maxdepth[j],
                                                                                 ntree = ntree,
                                                                                 #nsplit = 10,
-                                                                                mtry = length(grid_param$n_vars[i]))$perf_test)
+                                                                                mtry = grid_param$n_vars[i])$perf_test)
                                                                             })
-                                     )
+                                     res_RF_classic = do.call(rbind, lapply(list_res_RF_classic,
+                                                                            function(x) x[match(names(list_res_RF_classic[[1]]), names(x))]))
 
                                      # w_RF
 
@@ -440,38 +455,43 @@ make_result_simulated_data = function(v_n_simul,
                                                                     max_w_mod = v_sw_RF_mode1_max_w_mod)
 
 
-                                     res_w_RF_mode1 = do.call(rbind, lapply(X = 1:nrow(param_w_RF_mode1),
-                                                                            FUN = function(j){
-                                                                              unlist(sw_reg(
-                                                                                y_var = "y",
-                                                                                delta_var = "delta",
-                                                                                x_vars = paste0("v",1:grid_param$n_vars[i]),
-                                                                                train = data_sim[train_lines,],
-                                                                                test = data_sim[-train_lines,],
-                                                                                type_reg = "RF",
-                                                                                type_w = as.character(param_w_RF_mode1$type_w[j]),
-                                                                                max_time =  grid_param$censoring_threshold[i],
-                                                                                phi = phi,
-                                                                                phi.args = phi.args,
-                                                                                ev_methods = ev_methods,
-                                                                                types_w_ev = types_w_ev,
-                                                                                max_w_mod = param_w_RF_mode1$max_w_mod[j],
-                                                                                max_w_ev = max_w_ev,
-                                                                                sw_reg_obj = F,
-                                                                                cens_mod_obj = F,
-                                                                                bandwidths = bandwidths,
-                                                                                mat_w = mat_w,
-                                                                                minleaf = param_w_RF_mode1$minleaf[j],
-                                                                                maxdepth = param_w_RF_mode1$maxdepth[j],
-                                                                                #nsplit = 10,
-                                                                                ntree = ntree,
-                                                                                mtry = length(grid_param$n_vars[i]),
-                                                                                sampsize = length(train_lines), # for the sample size being the same as the train dataset
-                                                                                y_no_cens_var = "Te"
-                                                                              )$perf_test)
-                                                                            }
-                                     ))
+                                     list_res_w_RF_mode1 = lapply(X = 1:nrow(param_w_RF_mode1),
+                                            FUN = function(j){
+                                              unlist(sw_reg(
+                                                y_var = "y",
+                                                delta_var = "delta",
+                                                x_vars = paste0("v",1:grid_param$n_vars[i]),
+                                                train = data_sim[train_lines,],
+                                                test = data_sim[-train_lines,],
+                                                type_reg = "RF",
+                                                type_w = as.character(param_w_RF_mode1$type_w[j]),
+                                                max_time =  grid_param$censoring_threshold[i],
+                                                phi = phi,
+                                                phi.args = phi.args,
+                                                ev_methods = ev_methods,
+                                                types_w_ev = types_w_ev,
+                                                max_w_mod = param_w_RF_mode1$max_w_mod[j],
+                                                max_w_ev = max_w_ev,
+                                                sw_reg_obj = F,
+                                                cens_mod_obj = F,
+                                                bandwidths = bandwidths,
+                                                mat_w = mat_w,
+                                                minleaf = param_w_RF_mode1$minleaf[j],
+                                                maxdepth = param_w_RF_mode1$maxdepth[j],
+                                                #nsplit = 10,
+                                                ntree = ntree,
+                                                mtry = grid_param$n_vars[i],
+                                                sampsize = length(train_lines), # for the sample size being the same as the train dataset
+                                                y_no_cens_var = "Te"
+                                              )$perf_test)
+                                            }
+                                     )
+                                     res_w_RF_mode1 = do.call(rbind, lapply(list_res_w_RF_mode1,
+                                                                            function(x) x[match(names(list_res_w_RF_mode1[[1]]), names(x))]))
 
+
+
+                                     ## mode2
                                      param_w_RF_mode2 = expand.grid(type_pred = c("weights_tree", "KM_local"),
                                                                     algo = "w_RF2",
                                                                     type_w = v_sw_RF_mode2_type_w,
@@ -481,39 +501,40 @@ make_result_simulated_data = function(v_n_simul,
 
                                      param_w_RF_mode2_bis = unique(param_w_RF_mode2[,c("algo", "type_w", "minleaf", "maxdepth", "max_w_mod")])
 
-                                     res_w_RF_mode2 = do.call(rbind, lapply(X = 1:nrow(param_w_RF_mode2_bis),
-                                                                            FUN = function(j){
-                                                                              one_res_w_RF_mode2 = sw_reg(y_var = "y",
-                                                                                                          delta_var = "delta",
-                                                                                                          x_vars = paste0("v",1:grid_param$n_vars[i]),
-                                                                                                          train = data_sim[train_lines,],
-                                                                                                          test = data_sim[-train_lines,],
-                                                                                                          type_reg = "RF",
-                                                                                                          type_w = as.character(param_w_RF_mode2_bis$type_w[j]),
-                                                                                                          max_time =  grid_param$censoring_threshold[i],
-                                                                                                          phi = phi,
-                                                                                                          phi.args = phi.args,
-                                                                                                          ev_methods = ev_methods,
-                                                                                                          types_w_ev = types_w_ev,
-                                                                                                          max_w_mod = param_w_RF_mode2_bis$max_w_mod[j],
-                                                                                                          max_w_ev = max_w_ev,
-                                                                                                          sw_reg_obj = F,
-                                                                                                          cens_mod_obj = F,
-                                                                                                          bandwidths = bandwidths,
-                                                                                                          mat_w = mat_w,
-                                                                                                          y_no_cens_var = "Te",
-                                                                                                          mode_sw_RF = 2,
-                                                                                                          maxdepth = param_w_RF_mode2_bis$maxdepth[j],
-                                                                                                          minleaf = floor(param_w_RF_mode2_bis$minleaf[j] * mean(data_sim[train_lines,"delta"])),
-                                                                                                          ntree = ntree,
-                                                                                                          cp = 0,
-                                                                                                          xval = 0)
+                                     list_res_w_RF_mode2 = lapply(X = 1:nrow(param_w_RF_mode2_bis),
+                                                                  FUN = function(j){
+                                                                    one_res_w_RF_mode2 = sw_reg(y_var = "y",
+                                                                                                delta_var = "delta",
+                                                                                                x_vars = paste0("v",1:grid_param$n_vars[i]),
+                                                                                                train = data_sim[train_lines,],
+                                                                                                test = data_sim[-train_lines,],
+                                                                                                type_reg = "RF",
+                                                                                                type_w = as.character(param_w_RF_mode2_bis$type_w[j]),
+                                                                                                max_time =  grid_param$censoring_threshold[i],
+                                                                                                phi = phi,
+                                                                                                phi.args = phi.args,
+                                                                                                ev_methods = ev_methods,
+                                                                                                types_w_ev = types_w_ev,
+                                                                                                max_w_mod = param_w_RF_mode2_bis$max_w_mod[j],
+                                                                                                max_w_ev = max_w_ev,
+                                                                                                sw_reg_obj = F,
+                                                                                                cens_mod_obj = F,
+                                                                                                bandwidths = bandwidths,
+                                                                                                mat_w = mat_w,
+                                                                                                y_no_cens_var = "Te",
+                                                                                                mode_sw_RF = 2,
+                                                                                                maxdepth = param_w_RF_mode2_bis$maxdepth[j],
+                                                                                                minleaf = floor(param_w_RF_mode2_bis$minleaf[j] * mean(data_sim[train_lines,"delta"])),
+                                                                                                ntree = ntree,
+                                                                                                cp = 0,
+                                                                                                xval = 0)
 
-                                                                              return(rbind(unlist(one_res_w_RF_mode2$perf_test),
-                                                                                           unlist(one_res_w_RF_mode2$perf_test_KMloc)))
-                                                                            }
+                                                                    return(rbind(unlist(one_res_w_RF_mode2$perf_test),
+                                                                                 unlist(one_res_w_RF_mode2$perf_test_KMloc)))
+                                                                  }
                                      )
-                                     )
+                                     res_w_RF_mode2 = do.call(rbind, lapply(list_res_w_RF_mode2,
+                                                                            function(x) x[,match(colnames(list_res_w_RF_mode2[[1]]), colnames(x))]))
 
                                      # # w_gam
                                      # param_w_gam = expand.grid(type_pred = NA,
@@ -524,7 +545,7 @@ make_result_simulated_data = function(v_n_simul,
                                      #                           max_w_mod = v_sw_gam_max_w_mod)
                                      #
                                      #
-                                     # res_w_gam = do.call(rbind, lapply(X = 1:nrow(param_w_gam),
+                                     # list_res_w_gam = lapply(X = 1:nrow(param_w_gam),
                                      #                                   FUN = function(j){
                                      #                                     unlist(sw_reg(y_var = "y",
                                      #                                                   delta_var = "delta",
@@ -547,7 +568,9 @@ make_result_simulated_data = function(v_n_simul,
                                      #                                                   y_no_cens_var = "Te"
                                      #                                     )$perf_test)
                                      #                                   }
-                                     # ))
+                                     # )
+                                     # res_w_gam = do.call(rbind, lapply(list_res_w_gam,
+                                     #                                     function(x) x[match(names(list_res_w_gam[[1]]), names(x))]))
 
                                      # rsf_reg
                                      param_rsf_reg = expand.grid(type_pred = NA,
@@ -558,7 +581,7 @@ make_result_simulated_data = function(v_n_simul,
                                                                  max_w_mod = NA)
 
 
-                                     res_rsf_reg = do.call(rbind, lapply(X = 1:nrow(param_rsf_reg),
+                                     list_res_rsf_reg = lapply(X = 1:nrow(param_rsf_reg),
                                                                          FUN = function(j){
                                                                            unlist(rsf_reg(y_var = "y",
                                                                                           delta_var = "delta",
@@ -578,12 +601,14 @@ make_result_simulated_data = function(v_n_simul,
                                                                                           maxdepth = param_rsf_reg$maxdepth[j],
                                                                                           #nsplit = 10,
                                                                                           ntree = ntree,
-                                                                                          mtry = length(grid_param$n_vars[i]),
+                                                                                          mtry = grid_param$n_vars[i],
                                                                                           y_no_cens_var = "Te"
                                                                            )$perf_test)
                                                                          }
                                      )
-                                     )
+                                     res_rsf_reg = do.call(rbind, lapply(list_res_rsf_reg,
+                                                                            function(x) x[match(names(list_res_rsf_reg[[1]]), names(x))]))
+
 
                                      # cox_reg
                                      param_cox_reg = expand.grid(type_pred = NA,
@@ -593,7 +618,7 @@ make_result_simulated_data = function(v_n_simul,
                                                                  maxdepth = NA,
                                                                  max_w_mod = NA)
 
-                                     res_cox_reg = do.call(rbind, lapply(X = 1:nrow(param_cox_reg),
+                                     list_res_cox_reg = lapply(X = 1:nrow(param_cox_reg),
                                                                          FUN = function(j){
                                                                            unlist(cox_reg(y_var = "y",
                                                                                           delta_var = "delta",
@@ -613,18 +638,142 @@ make_result_simulated_data = function(v_n_simul,
                                                                            )$perf_test)
                                                                          }
                                      )
+                                     res_cox_reg = do.call(rbind, lapply(list_res_cox_reg,
+                                                                         function(x) x[match(names(list_res_cox_reg[[1]]), names(x))]))
+
+                                     # rrt_reg
+                                     param_rrt_reg = expand.grid(type_pred = NA,
+                                                                 algo = "rrt_reg",
+                                                                 type_w = NA,
+                                                                 minleaf = v_rrt_reg_minleaf,
+                                                                 maxdepth = v_rrt_reg_maxdepth,
+                                                                 max_w_mod = NA)
+
+                                     list_res_rrt_reg = lapply(X = 1:nrow(param_rrt_reg),
+                                                                         FUN = function(j){
+                                                                           unlist(
+                                                                             rrt_reg(y_var = "y",
+                                                                                     delta_var = "delta",
+                                                                                     x_vars = paste0("v",1:grid_param$n_vars[i]),
+                                                                                     train = data_sim[train_lines,],
+                                                                                     test = data_sim[-train_lines,],
+                                                                                     max_time = grid_param$censoring_threshold[i],
+                                                                                     phi = phi,
+                                                                                     phi.args = phi.args,
+                                                                                     ev_methods = ev_methods,
+                                                                                     types_w_ev = types_w_ev,
+                                                                                     max_w_ev = max_w_ev,
+                                                                                     mat_w = mat_w,
+                                                                                     rrt_obj = F,
+                                                                                     bandwidths = bandwidths,
+                                                                                     minleaf = floor(param_rrt_reg$minleaf[j] * mean(data_sim[train_lines,"delta"])),
+                                                                                     maxdepth = param_rrt_reg$maxdepth[j],
+                                                                                     ntree = ntree,
+                                                                                     y_no_cens_var = "Te",
+                                                                                     cp = 0,
+                                                                                     xval = 0)$perf_test_KMloc)
+                                                                         })
+                                     res_rrt_reg = do.call(rbind, lapply(list_res_rrt_reg,
+                                                                         function(x) x[match(names(list_res_rrt_reg[[1]]), names(x))]))
+
+
+
+                                     # rlt_reg
+
+                                     ## with RL
+                                     param_rlt_reg = expand.grid(type_pred = NA,
+                                                                 algo = "rlt_reg",
+                                                                 type_w = NA,
+                                                                 minleaf = v_rlt_reg_minleaf,
+                                                                 maxdepth = v_rlt_reg_maxdepth,
+                                                                 max_w_mod = NA)
+
+                                     list_res_rlt_reg = lapply(X = 1:nrow(param_rlt_reg),
+                                                                         FUN = function(j){
+                                                                           unlist(
+                                                                             rlt_reg(y_var = "y",
+                                                                                     delta_var = "delta",
+                                                                                     x_vars = paste0("v",1:grid_param$n_vars[i]),
+                                                                                     train = data_sim[train_lines,],
+                                                                                     test = data_sim[-train_lines,],
+                                                                                     max_time = grid_param$censoring_threshold[i],
+                                                                                     phi = phi,
+                                                                                     phi.args = phi.args,
+                                                                                     ev_methods = ev_methods,
+                                                                                     types_w_ev = types_w_ev,
+                                                                                     max_w_ev = max_w_ev,
+                                                                                     rlt_obj = F,
+                                                                                     bandwidths = bandwidths,
+                                                                                     mat_w = mat_w,
+                                                                                     minleaf = param_rlt_reg$minleaf[j],
+                                                                                     maxdepth = param_rlt_reg$maxdepth[j],
+                                                                                     y_no_cens_var = "Te",
+                                                                                     ntree = ntree,
+                                                                                     mtry = grid_param$n_vars[i],
+                                                                                     embed.ntrees = 10,
+                                                                                     importance = F,
+                                                                                     resample.prob = 1,
+                                                                                     reinforcement = T
+                                                                             )$perf_test)
+                                                                         })
+                                     res_rlt_reg = do.call(rbind, lapply(list_res_rlt_reg,
+                                                                         function(x) x[match(names(list_res_rlt_reg[[1]]), names(x))]))
+
+                                     ## without RL
+                                     param_rlt_reg_no_RL = expand.grid(type_pred = NA,
+                                                                       algo = "rlt_reg_no_RL",
+                                                                       type_w = NA,
+                                                                       minleaf = v_rlt_reg_no_RL_minleaf, # same cases studied as for rlt_reg
+                                                                       maxdepth = v_rlt_reg_no_RL_maxdepth,
+                                                                       max_w_mod = NA)
+
+                                     list_res_rlt_reg_no_RL = lapply(X = 1:nrow(param_rlt_reg_no_RL),
+                                                               FUN = function(j){
+                                                                 unlist(
+                                                                   rlt_reg(y_var = "y",
+                                                                           delta_var = "delta",
+                                                                           x_vars = paste0("v",1:grid_param$n_vars[i]),
+                                                                           train = data_sim[train_lines,],
+                                                                           test = data_sim[-train_lines,],
+                                                                           max_time = grid_param$censoring_threshold[i],
+                                                                           phi = phi,
+                                                                           phi.args = phi.args,
+                                                                           ev_methods = ev_methods,
+                                                                           types_w_ev = types_w_ev,
+                                                                           max_w_ev = max_w_ev,
+                                                                           rlt_obj = F,
+                                                                           bandwidths = bandwidths,
+                                                                           mat_w = mat_w,
+                                                                           minleaf = param_rlt_reg_no_RL$minleaf[j],
+                                                                           maxdepth = param_rlt_reg_no_RL$maxdepth[j],
+                                                                           y_no_cens_var = "Te",
+                                                                           ntree = ntree,
+                                                                           mtry = grid_param$n_vars[i],
+                                                                           importance = F,
+                                                                           resample.prob = 1,
+                                                                           reinforcement = F
+                                                                   )$perf_test)
+                                                               })
+                                     res_rlt_reg_no_RL = do.call(rbind, lapply(list_res_rlt_reg_no_RL,
+                                                                         function(x) x[match(names(list_res_rlt_reg_no_RL[[1]]), names(x))]))
+
+
+                                     list_res = list(
+                                       res_RF_classic, res_w_RF_mode1, res_w_RF_mode2,
+                                       #res_w_gam,
+                                       res_rsf_reg, res_cox_reg, res_rrt_reg, res_rlt_reg, res_rlt_reg_no_RL
                                      )
 
                                      return(cbind(rbind(param_RF_classic, param_w_RF_mode1, param_w_RF_mode2,
                                                         #param_w_gam,
-                                                        param_rsf_reg, param_cox_reg),
+                                                        param_rsf_reg, param_cox_reg, param_rrt_reg, param_rlt_reg, param_rlt_reg_no_RL),
                                                   iter = k,
-                                                  rbind(res_RF_classic, res_w_RF_mode1, res_w_RF_mode2,
-                                                        #res_w_gam,
-                                                        res_rsf_reg, res_cox_reg)))
+                                                  do.call(rbind, lapply(list_res,
+                                                                        function(x) x[, match(colnames(list_res[[1]]), colnames(x))]))
+                                                  ))
                                    }
                      stopCluster(cl)
-                     return(cbind( data.frame(grid_param[i,])[rep(as.character(i), nrow(res)),], res))
+                     return(cbind(data.frame(grid_param[i,])[rep(as.character(i), nrow(res)),], res))
                    }
             )
     )
@@ -632,214 +781,216 @@ make_result_simulated_data = function(v_n_simul,
 }
 
 
+# fonction qui n'est pas utilisée finalement
+#
+# RF_w_theo = function( y_var,
+#                       x_vars,
+#                       delta_var,
+#                       train,
+#                       test = NULL,
+#                       phi = function(x){x},
+#                       phi.args = list(),
+#                       max_time = NULL,
+#                       ev_methods,
+#                       mat_w,
+#                       types_w_ev,
+#                       max_w_ev,
+#                       bandwidths = NULL,
+#                       RF.object = T,
+#                       y_no_cens_var,
+#
+#                       ntree,
+#                       mtry,
+#                       maxdepth,
+#                       minleaf,
+#                       ...){
+#
+#   # fonction only used in the simulated data case
+#   ## random forest algo used as if there was no censoring
+#
+#   # column names of mat_w should be explicit
+#   if(!is.null(mat_w) & is.null(colnames(mat_w))) colnames(mat_w) = paste0("w",1:ncol(mat_w))
+#
+#   ev_methods <- match.arg(as.character(ev_methods), c("concordance", "group", "weighted"), several.ok = T)
+#   if (is.null(bandwidths) & ("group" %in% ev_methods)) bandwidths = 50
+#
+#   if(is.null(mat_w)){
+#     types_w_ev = match.arg(as.character(types_w_ev), c("KM", "Cox", "RSF", "unif"), several.ok = T)
+#   }
+#
+#   train = train[,c(x_vars, y_no_cens_var, delta_var, y_var)]
+#   test = test[,c(x_vars, y_no_cens_var, delta_var, y_var)]
+#
+#   if (!is.null(test)){
+#     data = rbind(train, test)
+#     data$is_train = c(rep(1, nrow(train)), rep(0, nrow(test)))
+#   } else {
+#     data = train
+#     data$is_train = 1
+#   }
+#
+#   if (("group" %in% ev_methods) & (nrow(data) < 500)){
+#     bandwidths = pmin(bandwidths, ifelse(!is.null(test), nrow(test), nrow(train)))
+#     stop("group performance criteria must not be accurate because it
+#          needs more observations to converge")
+#   }
+#
+#   if (is.null(max_time)){max_time = max(train[which(train[, delta_var] == 1), y_var])}
+#
+#   data$y_prime = pmin(data[,y_var], max_time)
+#   data$delta_prime = 1 * ((data[,delta_var] != 0) | (data[,y_var] >= max_time))
+#   data$phi = sapply(X = 1:length(data$y_prime),
+#                     FUN = function(i){do.call(phi, c(list(x=data$y_prime[i]), phi.args))})
+#   if(!is.null(y_no_cens_var)){
+#     data$phi_non_censored = sapply(X = 1:nrow(data),
+#                                    FUN = function(i){do.call(phi, c(list(x=pmin(data[,y_no_cens_var], max_time)[i]), phi.args))})
+#   }
+#
+#   # Computation of the weitghts if not provided
+#   if (is.null(mat_w)){
+#     mat_w_train = matrix(rep(0, length(types_w_ev) * sum(data$is_train == 1) ), ncol = length(types_w_ev))
+#     colnames(mat_w_train) = types_w_ev
+#     if (!is.null(test)){
+#       mat_w_test = matrix(rep(0, length(types_w_ev) * sum(data$is_train == 0) ), ncol = length(types_w_ev))
+#       colnames(mat_w_test) = types_w_ev
+#     }
+#     for (j in 1:length(types_w_ev)){
+#       mat_w_train[,j] = sword:::make_weights(data = data[data$is_train == 1, ],
+#                                              y_name = "y_prime",
+#                                              delta_name = "delta_prime",
+#                                              y_name2 = y_var,
+#                                              delta_name2 = delta_var,
+#                                              type = types_w_ev[j],
+#                                              max_ratio_weights = 1000,
+#                                              x_vars = x_vars,
+#                                              cens_mod_obj = FALSE)$weights
+#       if (!is.null(test)){
+#         mat_w_test[,j] = sword:::make_weights(data = data[data$is_train == 0, ],
+#                                               y_name = "y_prime",
+#                                               delta_name = "delta_prime",
+#                                               y_name2 = y_var,
+#                                               delta_name2 = delta_var,
+#                                               type = types_w_ev[j],
+#                                               max_ratio_weights = 1000,
+#                                               x_vars = x_vars,
+#                                               cens_mod_obj = FALSE)$weights
+#       }
+#     }
+#   }
+#
+#   # Build mat_w_train & mat_w_test if mat_w provided
+#   if (!is.null(mat_w)){
+#     if (is.null(types_w_ev)){
+#       types_w_ev = colnames(mat_w)
+#     }
+#     mat_w_train = mat_w[1:nrow(train), types_w_ev]
+#     if (!is.null(test)){
+#       mat_w_test = mat_w[(nrow(train)+1):(nrow(data)), types_w_ev]
+#     }
+#   }
+#
+#   # Thresholding of the weights_eval
+#   ## train
+#
+#   n_w_ev_modif_train = apply(X = mat_w_train, MARGIN = 2,
+#                              FUN = function(x){
+#                                x = sum(x > min(x[x > 0]) * max_w_ev)
+#                              })
+#
+#   mat_w_train = apply(X = mat_w_train, MARGIN = 2,
+#                       FUN = function(x){
+#                         x = pmin(x, min(x[x > 0]) * max_w_ev)
+#                         x = x / sum(x)
+#                       })
+#   ## test
+#   if (!is.null(test)){
+#
+#     n_w_ev_modif_test = apply(X = mat_w_test, MARGIN = 2,
+#                               FUN = function(x){
+#                                 x = sum(x > min(x[x > 0]) * max_w_ev)
+#                               })
+#
+#     mat_w_test = apply(X = mat_w_test, MARGIN = 2,
+#                        FUN = function(x){
+#                          x = pmin(x, min(x[x > 0]) * max_w_ev)
+#                          x = x / sum(x)
+#                        })
+#   }
+#
+#   # Build train & test
+#   train = data[data$is_train == 1,]
+#   if (!is.null(test)){
+#     test = data[data$is_train == 0,]
+#   }
+#
+#   # Calibration of RSF model
+#
+#   rfSRC = randomForestSRC::rfsrc( formula = phi_non_censored ~ .,
+#                                   data = train[,c("phi_non_censored",x_vars)],
+#                                   forest = T,
+#                                   ntree = ntree,
+#                                   mtry = mtry,
+#                                   nodesize = minleaf,
+#                                   nodedepth = maxdepth,
+#                                   ...)
+#
+#   overfitted_predictions_RF_classic = randomForestSRC::predict.rfsrc(rfSRC ,
+#                                                                      train[,x_vars])$predicted
+#
+#   # Performances on train test
+#   perf_train = sword:::eval_model(predictions = overfitted_predictions_RF_classic,
+#                                   data = train,
+#                                   phi_name = "phi",
+#                                   y_name = "y_prime",
+#                                   delta_name = "delta_prime",
+#                                   max_time = max_time,
+#                                   ev_methods = ev_methods,
+#                                   phi = phi,
+#                                   phi.args = phi.args,
+#                                   mat_w = mat_w_train,
+#                                   phi_non_censored_name = "phi_non_censored",
+#                                   bandwidths = bandwidths)
+#
+#   if (!is.null(test)){
+#     test_predictions_RF_classic = randomForestSRC::predict.rfsrc(rfSRC,
+#                                                                  test[,x_vars])$predicted
+#
+#     # Performances on test set
+#     perf_test = sword:::eval_model(predictions = test_predictions_RF_classic,
+#                                    data = test,
+#                                    phi_name = "phi",
+#                                    y_name = "y_prime",
+#                                    delta_name = "delta_prime",
+#                                    max_time = max_time,
+#                                    ev_methods = ev_methods,
+#                                    phi = phi,
+#                                    phi.args = phi.args,
+#                                    mat_w = mat_w_test,
+#                                    phi_non_censored_name = "phi_non_censored",
+#                                    bandwidths = bandwidths)
+#   }
+#
+#   result = list(
+#     pred_train = overfitted_predictions_RF_classic,
+#     perf_train = perf_train,
+#     train = train[,c(y_var, delta_var, "y_prime", "delta_prime", "phi", "phi_non_censored", x_vars)],
+#     mat_w_train = mat_w_train,
+#     max_time = max_time,
+#     phi = phi,
+#     phi.args = phi.args,
+#     x_vars = x_vars,
+#     cens_rate = sum(data$delta_prime == 0) / nrow(data)
+#   )
+#   if (RF.object){result$RF.object = rfSRC}
+#   if (!is.null(test)){
+#     result$pred = test_predictions_RF_classic
+#     result$perf_test = perf_test
+#     result$test = test[,c(y_var, delta_var, "y_prime", "delta_prime", "phi", "phi_non_censored", x_vars)]
+#     result$mat_w_test = mat_w_test
+#   }
+#   return(result)
+# }
 
-RF_w_theo = function( y_var,
-                      x_vars,
-                      delta_var,
-                      train,
-                      test = NULL,
-                      phi = function(x){x},
-                      phi.args = list(),
-                      max_time = NULL,
-                      ev_methods,
-                      mat_w,
-                      types_w_ev,
-                      max_w_ev,
-                      bandwidths = NULL,
-                      RF.object = T,
-                      y_no_cens_var,
-
-                      ntree,
-                      mtry,
-                      maxdepth,
-                      minleaf,
-                      ...){
-
-  # fonction only used in the simulated data case, to benchmark our method with the "classical"
-  ## random forest algo used as if there was no censoring
-
-  # column names of mat_w should be explicit
-  if(!is.null(mat_w) & is.null(colnames(mat_w))) colnames(mat_w) = paste0("w",1:ncol(mat_w))
-
-  ev_methods <- match.arg(as.character(ev_methods), c("concordance", "group", "weighted"), several.ok = T)
-  if (is.null(bandwidths) & ("group" %in% ev_methods)) bandwidths = 50
-
-  if(is.null(mat_w)){
-    types_w_ev = match.arg(as.character(types_w_ev), c("KM", "Cox", "RSF", "unif"), several.ok = T)
-  }
-
-  train = train[,c(x_vars, y_no_cens_var, delta_var, y_var)]
-  test = test[,c(x_vars, y_no_cens_var, delta_var, y_var)]
-
-  if (!is.null(test)){
-    data = rbind(train, test)
-    data$is_train = c(rep(1, nrow(train)), rep(0, nrow(test)))
-  } else {
-    data = train
-    data$is_train = 1
-  }
-
-  if (("group" %in% ev_methods) & (nrow(data) < 500)){
-    bandwidths = pmin(bandwidths, ifelse(!is.null(test), nrow(test), nrow(train)))
-    stop("group performance criteria must not be accurate because it
-         needs more observations to converge")
-  }
-
-  if (is.null(max_time)){max_time = max(train[which(train[, delta_var] == 1), y_var])}
-
-  data$y_prime = pmin(data[,y_var], max_time)
-  data$delta_prime = 1 * ((data[,delta_var] != 0) | (data[,y_var] >= max_time))
-  data$phi = sapply(X = 1:length(data$y_prime),
-                    FUN = function(i){do.call(phi, c(list(x=data$y_prime[i]), phi.args))})
-  if(!is.null(y_no_cens_var)){
-    data$phi_non_censored = sapply(X = 1:nrow(data),
-                                   FUN = function(i){do.call(phi, c(list(x=pmin(data[,y_no_cens_var], max_time)[i]), phi.args))})
-  }
-
-  # Computation of the weitghts if not provided
-  if (is.null(mat_w)){
-    mat_w_train = matrix(rep(0, length(types_w_ev) * sum(data$is_train == 1) ), ncol = length(types_w_ev))
-    colnames(mat_w_train) = types_w_ev
-    if (!is.null(test)){
-      mat_w_test = matrix(rep(0, length(types_w_ev) * sum(data$is_train == 0) ), ncol = length(types_w_ev))
-      colnames(mat_w_test) = types_w_ev
-    }
-    for (j in 1:length(types_w_ev)){
-      mat_w_train[,j] = sword:::make_weights(data = data[data$is_train == 1, ],
-                                             y_name = "y_prime",
-                                             delta_name = "delta_prime",
-                                             y_name2 = y_var,
-                                             delta_name2 = delta_var,
-                                             type = types_w_ev[j],
-                                             max_ratio_weights = 1000,
-                                             x_vars = x_vars,
-                                             cens_mod_obj = FALSE)$weights
-      if (!is.null(test)){
-        mat_w_test[,j] = sword:::make_weights(data = data[data$is_train == 0, ],
-                                              y_name = "y_prime",
-                                              delta_name = "delta_prime",
-                                              y_name2 = y_var,
-                                              delta_name2 = delta_var,
-                                              type = types_w_ev[j],
-                                              max_ratio_weights = 1000,
-                                              x_vars = x_vars,
-                                              cens_mod_obj = FALSE)$weights
-      }
-    }
-  }
-
-  # Build mat_w_train & mat_w_test if mat_w provided
-  if (!is.null(mat_w)){
-    if (is.null(types_w_ev)){
-      types_w_ev = colnames(mat_w)
-    }
-    mat_w_train = mat_w[1:nrow(train), types_w_ev]
-    if (!is.null(test)){
-      mat_w_test = mat_w[(nrow(train)+1):(nrow(data)), types_w_ev]
-    }
-  }
-
-  # Thresholding of the weights_eval
-  ## train
-
-  n_w_ev_modif_train = apply(X = mat_w_train, MARGIN = 2,
-                             FUN = function(x){
-                               x = sum(x > min(x[x > 0]) * max_w_ev)
-                             })
-
-  mat_w_train = apply(X = mat_w_train, MARGIN = 2,
-                      FUN = function(x){
-                        x = pmin(x, min(x[x > 0]) * max_w_ev)
-                        x = x / sum(x)
-                      })
-  ## test
-  if (!is.null(test)){
-
-    n_w_ev_modif_test = apply(X = mat_w_test, MARGIN = 2,
-                              FUN = function(x){
-                                x = sum(x > min(x[x > 0]) * max_w_ev)
-                              })
-
-    mat_w_test = apply(X = mat_w_test, MARGIN = 2,
-                       FUN = function(x){
-                         x = pmin(x, min(x[x > 0]) * max_w_ev)
-                         x = x / sum(x)
-                       })
-  }
-
-  # Build train & test
-  train = data[data$is_train == 1,]
-  if (!is.null(test)){
-    test = data[data$is_train == 0,]
-  }
-
-  # Calibration of RSF model
-
-  rfSRC = randomForestSRC::rfsrc( formula = phi_non_censored ~ .,
-                                  data = train[,c("phi_non_censored",x_vars)],
-                                  forest = T,
-                                  ntree = ntree,
-                                  mtry = mtry,
-                                  nodesize = minleaf,
-                                  nodedepth = maxdepth,
-                                  ...)
-
-  overfitted_predictions_RF_classic = randomForestSRC::predict.rfsrc(rfSRC ,
-                                                                     train[,x_vars])$predicted
-
-  # Performances on train test
-  perf_train = sword:::eval_model(predictions = overfitted_predictions_RF_classic,
-                                  data = train,
-                                  phi_name = "phi",
-                                  y_name = "y_prime",
-                                  delta_name = "delta_prime",
-                                  max_time = max_time,
-                                  ev_methods = ev_methods,
-                                  phi = phi,
-                                  phi.args = phi.args,
-                                  mat_w = mat_w_train,
-                                  phi_non_censored_name = "phi_non_censored",
-                                  bandwidths = bandwidths)
-
-  if (!is.null(test)){
-    test_predictions_RF_classic = randomForestSRC::predict.rfsrc(rfSRC,
-                                                                 test[,x_vars])$predicted
-
-    # Performances on test set
-    perf_test = sword:::eval_model(predictions = test_predictions_RF_classic,
-                                   data = test,
-                                   phi_name = "phi",
-                                   y_name = "y_prime",
-                                   delta_name = "delta_prime",
-                                   max_time = max_time,
-                                   ev_methods = ev_methods,
-                                   phi = phi,
-                                   phi.args = phi.args,
-                                   mat_w = mat_w_test,
-                                   phi_non_censored_name = "phi_non_censored",
-                                   bandwidths = bandwidths)
-  }
-
-  result = list(
-    pred_train = overfitted_predictions_RF_classic,
-    perf_train = perf_train,
-    train = train[,c(y_var, delta_var, "y_prime", "delta_prime", "phi", "phi_non_censored", x_vars)],
-    mat_w_train = mat_w_train,
-    max_time = max_time,
-    phi = phi,
-    phi.args = phi.args,
-    x_vars = x_vars,
-    cens_rate = sum(data$delta_prime == 0) / nrow(data)
-  )
-  if (RF.object){result$RF.object = rfSRC}
-  if (!is.null(test)){
-    result$pred = test_predictions_RF_classic
-    result$perf_test = perf_test
-    result$test = test[,c(y_var, delta_var, "y_prime", "delta_prime", "phi", "phi_non_censored", x_vars)]
-    result$mat_w_test = mat_w_test
-  }
-  return(result)
-  }
 
 RF_classic = function(y_no_cens_var,
                       x_vars,
@@ -1047,4 +1198,6 @@ RF_classic = function(y_no_cens_var,
   }
   return(result)
 }
+
+
 

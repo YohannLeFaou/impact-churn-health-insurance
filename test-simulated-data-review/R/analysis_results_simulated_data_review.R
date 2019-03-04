@@ -4,7 +4,7 @@ library(reshape2)
 library(xtable)
 library(dplyr)
 
-setwd("~/Google Drive/GitHub/impact-churn-health-insurance/test_simulated_data/")
+setwd("~/Google Drive/GitHub/impact-churn-health-insurance/test-simulated-data-review")
 
 # ----------------------------------------------------------------
 #                   Functions
@@ -41,14 +41,20 @@ make_plot_results_simul = function(data_results, maxdepth, max_w_mod, plot_title
                              return(to_plot)
                            }))
   to_plot$model = factor(x = to_plot$model,
-                         levels = c("RF", "wRF1_KM", "wRF1_Cox", "wRF1_RSF",
-                                    "wRF2_KM", "wRF2_Cox",
-                                    "wRF3_KM", "wRF3_Cox",
-                                    "rsf_reg", "cox_reg"),
-                         labels = c("RF", "swRF11", "swRF12", "swRF13",
-                                    "swRF21", "swRF22",
-                                    "swRF31", "swRF32",
-                                    "RSFr", "Cr"))
+                         levels = c("RF",
+                                    "wRF1_KM", "wRF1_Cox", "wRF1_RSF", "wRF1_theo",
+                                    "wRF2_KM", "wRF2_Cox", "wRF2_theo",
+                                    "wRF3_KM", "wRF3_Cox", "wRF3_theo",
+                                    "rsf_reg", "cox_reg",
+                                    "rrt_reg",
+                                    "rlt_reg", "rlt_reg_no_RL"),
+                         labels = c("RF",
+                                    "swRF11", "swRF12", "swRF13", "swRF14",
+                                    "swRF21", "swRF22", "swRF24",
+                                    "swRF31", "swRF32", "swRF34",
+                                    "RSFr", "Cr",
+                                    "RRTr",
+                                    "RLTr", "nRLTr"))
 
   # ggplot(data = to_plot, aes(x = model, y = mean_R2,
   #                            group = interaction(target_R2_C, prop_censored),
@@ -67,6 +73,9 @@ make_plot_results_simul = function(data_results, maxdepth, max_w_mod, plot_title
   #                         labels  = c("0.1, 0.05", "0.1, 0.2",
   #                                     "0.3, 0.05", "0.3, 0.2",
   #                                     "0.5, 0.05", "0.5, 0.2"))
+
+  # to_plot = to_plot[to_plot$model %in% c("RF", "swRF11", "swRF13", "swRF32", "swRF34",
+  #                                        "RSFr", "Cr", "RRTr", "RLTr"), ]
   to_plot$col_criteria = to_plot[,criteria]
 
   if (is.null(data_ranks)){
@@ -162,16 +171,28 @@ make_correlation_simul = function(data_results, minleaf, maxdepth, max_w_mod){
                          ifelse(is.na(as.character(to_plot$type_w)), "", paste0("_",as.character(to_plot$type_w)))
   )
 
-  to_plot$model = factor(x = to_plot$model, levels = c("RF", "wRF1_KM", "wRF1_Cox", "wRF1_RSF",
-                                                       "wRF2_KM", "wRF2_Cox",
-                                                       "wRF3_KM", "wRF3_Cox",
-                                                       "rsf_reg", "cox_reg"))
+  to_plot$model = factor(x = to_plot$model,
+                         levels = c("RF",
+                                    "wRF1_KM", "wRF1_Cox", "wRF1_RSF", "wRF1_theo",
+                                    "wRF2_KM", "wRF2_Cox", "wRF2_theo",
+                                    "wRF3_KM", "wRF3_Cox", "wRF3_theo",
+                                    "rsf_reg", "cox_reg",
+                                    "rrt_reg",
+                                    "rlt_reg", "rlt_reg_no_RL"),
+                         labels = c("RF",
+                                    "swRF11", "swRF12", "swRF13", "swRF14",
+                                    "swRF21", "swRF22", "swRF24",
+                                    "swRF31", "swRF32", "swRF34",
+                                    "RSFr", "Cr",
+                                    "RRTr",
+                                    "RLTr", "nRLTr"))
 
   d = melt(data = to_plot,
            id.vars = c("prop_censored", "target_R2_C", "iter", "model"),
            measure.vars = c("criteria_non_censored.mse",
                             "criteria_weighted.RSF_mse",
                             "criteria_weighted.Cox_mse",
+                            "criteria_weighted.theo_mse",
                             "criteria_weighted.KM_mse",
                             "criteria_weighted.unif_mse"))
 
@@ -194,8 +215,10 @@ make_correlation_simul = function(data_results, minleaf, maxdepth, max_w_mod){
   result_cor_summary = result_cor %>% group_by(prop_censored, target_R2_C) %>% summarise(criteria_non_censored.mse = mean(criteria_non_censored.mse),
                                                                                          criteria_weighted.RSF_mse = mean(criteria_weighted.RSF_mse),
                                                                                          criteria_weighted.Cox_mse = mean(criteria_weighted.Cox_mse),
+                                                                                         criteria_weighted.theo_mse = mean(criteria_weighted.theo_mse),
                                                                                          criteria_weighted.KM_mse = mean(criteria_weighted.KM_mse),
-                                                                                         criteria_weighted.unif_mse = mean(criteria_weighted.unif_mse))
+                                                                                         criteria_weighted.unif_mse = mean(criteria_weighted.unif_mse)
+                                                                                         )
   return(data.frame(result_cor_summary))
 }
 
@@ -251,66 +274,59 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 maxdepth = 4
 max_w_mod = 50
 
-res_simul_weibull_log_1000_summary = read.csv("output_2017-10-24/res_simul_weibull_log_1000_summary.csv")
-res_simul_weibull_identite_1000_summary = read.csv("output_2017-10-24/res_simul_weibull_identite_1000_summary.csv")
-res_simul_mix_indep_log_1000_summary = read.csv("output_2017-10-24/res_simul_mix_indep_log_1000_summary.csv")
-res_simul_mix_indep_identite_1000_summary = read.csv("output_2017-10-24/res_simul_mix_indep_identite_1000_summary.csv")
-res_simul_mix_dep_log_1000_summary = read.csv("output_2017-10-24/res_simul_mix_dep_log_1000_summary.csv")
-res_simul_mix_dep_identite_1000_summary = read.csv("output_2017-10-24/res_simul_mix_dep_identite_1000_summary.csv")
+res_simul_weibull_log_1000_summary = read.csv2("output_2018-12-12/res_simul_weibull_log_1000_summary_new.csv")
+res_simul_weibull_identite_1000_summary = read.csv2("output_2018-12-12/res_simul_weibull_identite_1000_summary_new.csv")
+res_simul_mix_indep_log_1000_summary = read.csv2("output_2018-12-12/res_simul_mix_indep_log_1000_summary_new.csv")
+res_simul_mix_indep_identite_1000_summary = read.csv2("output_2018-12-12/res_simul_mix_indep_identite_1000_summary_new.csv")
+res_simul_mix_dep_log_1000_summary = read.csv2("output_2018-12-12/res_simul_mix_dep_log_1000_summary_new.csv")
+res_simul_mix_dep_identite_1000_summary = read.csv2("output_2018-12-12/res_simul_mix_dep_identite_1000_summary_new.csv")
 
-
-# res_simul_weibull_log_1000_summary$mean_rmse = sqrt(res_simul_weibull_log_1000_summary$mean_mse)
-# res_simul_weibull_identite_1000_summary$mean_rmse = sqrt(res_simul_weibull_identite_1000_summary$mean_mse)
-# res_simul_mix_indep_log_1000_summary$mean_rmse = sqrt(res_simul_mix_indep_log_1000_summary$mean_mse)
-# res_simul_mix_indep_identite_1000_summary$mean_rmse = sqrt(res_simul_mix_indep_identite_1000_summary$mean_mse)
-# res_simul_mix_dep_log_1000_summary$mean_rmse = sqrt(res_simul_mix_dep_log_1000_summary$mean_mse)
-# res_simul_mix_dep_identite_1000_summary$mean_rmse = sqrt(res_simul_mix_dep_identite_1000_summary$mean_mse)
 
 
 plot1 = make_plot_results_simul(data_results = res_simul_weibull_identite_1000_summary,
                                 maxdepth = maxdepth,
                                 max_w_mod = max_w_mod,
-                                plot_title = "case 1 : weibull, phi(x) = x",
+                                plot_title = "case 1 : weibull, phi(t) = t",
                                 criteria = "mean_mse"
 )
 plot2 = make_plot_results_simul(data_results = res_simul_mix_indep_identite_1000_summary,
                                 maxdepth = maxdepth,
                                 max_w_mod = max_w_mod,
-                                plot_title = "case 2 : indep. mix., phi(x) = x",
+                                plot_title = "case 2 : indep. mix., phi(t) = t",
                                 criteria = "mean_mse"
 )
 plot3 = make_plot_results_simul(data_results = res_simul_mix_dep_identite_1000_summary,
                                 maxdepth = maxdepth,
                                 max_w_mod = max_w_mod,
-                                plot_title = "case 3 : dep. mix., phi(x) = x",
+                                plot_title = "case 3 : dep. mix., phi(t) = t",
                                 criteria = "mean_mse"
 )
 plot4 = make_plot_results_simul(data_results = res_simul_weibull_log_1000_summary,
                                 maxdepth = maxdepth,
                                 max_w_mod = max_w_mod,
-                                plot_title = "case 1 : weibull, phi(x) = log(x+1)",
+                                plot_title = "case 1 : weibull, phi(t) = log(t+1)",
                                 criteria = "mean_mse"
 )
 plot5 = make_plot_results_simul(data_results = res_simul_mix_indep_log_1000_summary,
                                 maxdepth = maxdepth,
                                 max_w_mod = max_w_mod,
-                                plot_title = "case 2 : indep. mix., phi(x) = log(x+1)",
+                                plot_title = "case 2 : indep. mix., phi(t) = log(t+1)",
                                 criteria = "mean_mse"
 )
 plot6 = make_plot_results_simul(data_results = res_simul_mix_dep_log_1000_summary,
                                 maxdepth = maxdepth,
                                 max_w_mod = max_w_mod,
-                                plot_title = "case 3 : dep. mix., phi(x) = log(x+1)",
+                                plot_title = "case 3 : dep. mix., phi(t) = log(t+1)",
                                 criteria = "mean_mse"
 )
 
 
-multiplot(plot1$plot + ylab("mse") + theme(legend.position = "None"),
-          plot2$plot + ylab("mse") + theme(legend.position = "None"),
-          plot3$plot + ylab("mse") + theme(legend.position = "None"),
-          plot4$plot + ylab("mse") + theme(legend.position = "None"),
-          plot5$plot + ylab("mse") + theme(legend.position = "None"),
-          plot6$plot + ylab("mse") + theme(legend.position = "None"),
+multiplot(plot1$plot + ylab("MSE") + theme(legend.position = "None"),
+          plot2$plot + ylab("MSE") + theme(legend.position = "None"),
+          plot3$plot + ylab("MSE") , #+ theme(legend.position = "None")
+          plot4$plot + ylab("MSE") + theme(legend.position = "None"),
+          plot5$plot + ylab("MSE") + theme(legend.position = "None"),
+          plot6$plot + ylab("MSE") + theme(legend.position = "None"),
           cols = 2)
 
 
@@ -319,12 +335,12 @@ multiplot(plot1$plot + ylab("mse") + theme(legend.position = "None"),
 # -------------------------------------------------
 
 
-res_simul_weibull_log_1000 = read.csv("output_2017-10-24/res_simul_weibull_log_1000.csv")
-res_simul_weibull_identite_1000 = read.csv("output_2017-10-24/res_simul_weibull_identite_1000.csv")
-res_simul_mix_indep_log_1000 = read.csv("output_2017-10-24/res_simul_mix_indep_log_1000.csv")
-res_simul_mix_indep_identite_1000 = read.csv("output_2017-10-24/res_simul_mix_indep_identite_1000.csv")
-res_simul_mix_dep_log_1000 = read.csv("output_2017-10-24/res_simul_mix_dep_log_1000.csv")
-res_simul_mix_dep_identite_1000 = read.csv("output_2017-10-24/res_simul_mix_dep_identite_1000.csv")
+res_simul_weibull_log_1000 = read.csv2("output_2018-12-12/res_simul_weibull_log_1000.csv")
+res_simul_weibull_identite_1000 = read.csv2("output_2018-12-12/res_simul_weibull_identite_1000.csv")
+res_simul_mix_indep_log_1000 = read.csv2("output_2018-12-12/res_simul_mix_indep_log_1000.csv")
+res_simul_mix_indep_identite_1000 = read.csv2("output_2018-12-12/res_simul_mix_indep_identite_1000.csv")
+res_simul_mix_dep_log_1000 = read.csv2("output_2018-12-12/res_simul_mix_dep_log_1000.csv")
+res_simul_mix_dep_identite_1000 = read.csv2("output_2018-12-12/res_simul_mix_dep_identite_1000.csv")
 
 
 
@@ -365,8 +381,8 @@ res_simul_mean_correlation = (res_simul_weibull_log_1000_correlation +
                                 res_simul_mix_dep_log_1000_correlation +
                                 res_simul_mix_dep_identite_1000_correlation) / 6
 
-write.csv(x = res_simul_mean_correlation,
-          file = "output_2017-10-24/res_simul_mean_correlation.csv",
+write.csv2(x = res_simul_mean_correlation,
+          file = "images_2018-12-12/res_simul_mean_correlation.csv",
           row.names = F)
 
 xtable(x = res_simul_mean_correlation[,-3], digits = 2)
