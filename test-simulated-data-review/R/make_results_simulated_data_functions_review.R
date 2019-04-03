@@ -200,7 +200,7 @@ generate_censored_data = function(n_simul,
   ## construction of the dataframe
   data_sim = cbind(X,Te,C)
   data_sim = as.data.frame(data_sim)
-  colnames(data_sim) = c(paste0("v",1:n_vars), "Te", "C")
+  colnames(data_sim) = c(paste0("v",1:length(n_vars)), "Te", "C")
 
   data_sim$y = pmin(data_sim$Te, data_sim$C)
   data_sim$delta = (data_sim$Te <= data_sim$C) * 1

@@ -602,7 +602,8 @@ make_result_real_data = function(y_var,
 
 
                   list_res = list(
-                    res_w_RF_mode1, res_w_RF_mode2,
+                    res_w_RF_mode1
+                    , res_w_RF_mode2,
                     #res_w_gam,
                     res_rsf_reg, res_cox_reg, res_rrt_reg,
                     res_rlt_reg, res_rlt_reg_no_RL
@@ -610,9 +611,11 @@ make_result_real_data = function(y_var,
 
 
                   return(cbind(censoring_rate_with_threshold = res_mat_w$cens_rate,
-                               rbind(param_w_RF_mode1, param_w_RF_mode2,
+                               rbind(param_w_RF_mode1
+                                     , param_w_RF_mode2,
                                      #param_w_gam,
-                                     param_rsf_reg, param_cox_reg, param_rrt_reg, param_rlt_reg, param_rlt_reg_no_RL),
+                                     param_rsf_reg, param_cox_reg, param_rrt_reg, param_rlt_reg, param_rlt_reg_no_RL
+                                     ),
                                iter = i,
                                do.call(rbind, lapply(list_res,
                                                      function(x) x[, match(colnames(list_res[[1]]), colnames(x))]))
